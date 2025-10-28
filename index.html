@@ -227,6 +227,16 @@
         </main>
     </div>
 
+    <script>
+        // CRITICAL FIX: Hide the loading screen instantly before the module script starts
+        // This ensures the user sees something immediately, solving the long perceived delay.
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialLoading = document.getElementById('initial-loading');
+            if (initialLoading) {
+                 initialLoading.classList.add('hidden');
+            }
+        });
+    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -253,7 +263,6 @@
         // DOM Elements
         const appContent = document.getElementById('app-content');
         const loginScreen = document.getElementById('login-screen');
-        const initialLoading = document.getElementById('initial-loading');
         const authText = document.getElementById('auth-text');
         const authIndicator = document.getElementById('auth-indicator');
         const authErrorMessage = document.getElementById('auth-error-message');
@@ -269,14 +278,12 @@
         // --- Core Authentication Flow ---
 
         async function initializeAuth() {
-            // 1. Start persistence setting in the background without blocking the thread.
+            // Set persistence asynchronously (no await) to avoid blocking the main thread if local storage is slow.
             setPersistence(auth, browserLocalPersistence).catch(error => {
                 console.error("Error setting persistence:", error);
             });
             
-            // 2. IMPORTANT: Hide the initial loading screen immediately. 
-            // This prevents the user from waiting for a potentially slow browser storage operation.
-            initialLoading.classList.add('hidden'); 
+            // The initial loading screen is already hidden by the self-executing script block above.
 
             onAuthStateChanged(auth, (user) => {
                 isAuthReady = true;
@@ -623,14 +630,11 @@
             generateBtn.disabled = true;
             globalLoadingIndicator.classList.remove('hidden'); // Show global loader temporarily
 
-            const comparisonTimestamp = Timestamp.now();
             const streamingTasks = [];
-            const cardIds = [];
 
             // 1. Immediately render all skeleton cards and start tasks in parallel
             selectedModels.forEach(modelKey => {
                 const cardId = renderStreamingCard(modelKey, prompt);
-                cardIds.push(cardId);
                 // Launch the streaming simulation for each model in parallel
                 streamingTasks.push(simulateStream(modelKey, prompt, cardId));
             });
