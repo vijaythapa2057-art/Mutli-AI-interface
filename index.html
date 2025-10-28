@@ -10,19 +10,16 @@
     <!-- Use Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     
-    <!-- Firebase Imports -->
+    <!-- Firebase Imports (Keeping only Firestore for history, but removing Auth dependencies) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Re-adding necessary Auth imports for anonymous sign-in
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, query, limit, getDocs, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase references
         window.initializeApp = initializeApp;
-        window.getAuth = getAuth;
-        window.signInAnonymously = signInAnonymously;
-        window.signInWithCustomToken = signInWithCustomToken;
-        window.onAuthStateChanged = onAuthStateChanged;
         window.getFirestore = getFirestore;
         window.doc = doc;
         window.setDoc = setDoc;
@@ -34,6 +31,11 @@
         window.onSnapshot = onSnapshot;
         window.serverTimestamp = serverTimestamp;
         window.setLogLevel = setLogLevel;
+        
+        // Expose Auth functions for use in the script block
+        window.getAuth = getAuth;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
     </script>
 
     <style>
@@ -93,9 +95,7 @@
         <header class="mb-8 text-center">
             <h1 class="text-4xl font-extrabold text-teal-400">AI Model Comparison Hub</h1>
             <p class="text-teal-200 mt-2">Compare model outputs side-by-side using a single prompt.</p>
-            <div id="auth-status" class="text-sm mt-2 text-slate-400">
-                <span id="user-id-display">Loading User...</span> | <span id="auth-state">Authenticating...</span>
-            </div>
+             <!-- Removed auth status display -->
         </header>
 
         <!-- Controls Panel -->
@@ -113,7 +113,7 @@
                 <div>
                     <div class="text-sm font-medium mb-2 text-teal-300">Select Models (Min 1)</div>
                     <div id="model-selection" class="space-y-2 text-sm">
-                        <!-- Checkboxes will be dynamically added here -->
+                        <!-- Checkboxes -->
                         <label class="flex items-center space-x-2 text-blue-300">
                             <input type="checkbox" name="model" value="flash" class="form-checkbox text-blue-500 rounded model-checkbox" checked>
                             <span>Gemini Flash</span>
@@ -143,7 +143,7 @@
                 <button id="generate-button" 
                         class="px-8 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-lg hover:bg-teal-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" 
                         disabled>
-                    Generate Comparisons
+                    Select Model(s) & Enter Prompt
                 </button>
             </div>
         </div>
@@ -171,8 +171,9 @@
     <script>
         // Global variables for Firebase and App
         let db;
-        let auth;
-        let userId = 'default-user'; // Fallback
+        // User ID is now simply a unique ID for saving history, as there is no auth.
+        // Changed to 'let' so it can be updated after anonymous sign-in
+        let userId = crypto.randomUUID(); 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -183,8 +184,6 @@
         const modelCheckboxes = document.querySelectorAll('.model-checkbox');
         const responseContainer = document.getElementById('response-container');
         const historyContainer = document.getElementById('history-container');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const authStateDisplay = document.getElementById('auth-state');
 
         // Model Data (Simulated, as actual model calls are not implemented here)
         const models = {
@@ -195,12 +194,11 @@
             'llama3': { name: 'Llama 3', colorClass: 'color-yellow', response: 'This is a placeholder response from Llama 3.' },
         };
 
-        // --- Firebase Initialization and Auth ---
+        // --- Firebase Initialization and Auth (Anonymous) ---
 
-        async function initializeAuth() {
+        async function initializeDb() { // Made function asynchronous
             if (!firebaseConfig || !window.initializeApp) {
                 console.error("Firebase configuration or initialization functions are missing.");
-                authStateDisplay.textContent = 'Auth Failed: No Config';
                 return;
             }
             
@@ -209,32 +207,24 @@
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
-                auth = getAuth(app);
                 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
+                // Perform anonymous sign-in to satisfy Firestore security rules
+                const auth = getAuth(app);
+                if (initialAuthToken) { 
+                    await signInWithCustomToken(auth, initialAuthToken); 
+                } else { 
+                    await signInAnonymously(auth); 
                 }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = `User ID: ${userId.substring(0, 8)}...`;
-                        authStateDisplay.textContent = 'Authenticated';
-                        // Start listening to history once authenticated
-                        loadComparisonHistory();
-                        updateButtonStatus();
-                    } else {
-                        userId = crypto.randomUUID();
-                        userIdDisplay.textContent = 'Anonymous';
-                        authStateDisplay.textContent = 'Unauthenticated';
-                        updateButtonStatus();
-                    }
-                });
+                
+                // Update userId with the authenticated UID
+                userId = auth.currentUser?.uid || userId;
+                
+                // Start listening to history only after successful sign-in
+                loadComparisonHistory();
+                updateButtonStatus();
             } catch (error) {
-                console.error("Error during Firebase initialization or sign-in:", error);
-                authStateDisplay.textContent = `Auth Error: ${error.code}`;
+                console.error("Error during Firebase initialization/authentication:", error);
+                showMessage('Failed to connect to the database. History may not load.', 'error');
             }
         }
 
@@ -248,14 +238,15 @@
 
         async function saveComparison(prompt, responses) {
             const comparisonsRef = getHistoryCollectionRef();
-            if (!comparisonsRef) return console.error("Firestore DB not ready.");
+            // Check if userId is properly set before saving
+            if (!comparisonsRef || !userId) return console.error("Firestore DB or userId not ready for saving.");
 
             try {
                 await setDoc(doc(comparisonsRef), {
                     prompt: prompt,
                     responses: responses,
                     timestamp: serverTimestamp(),
-                    userId: userId,
+                    userId: userId, // Using the authenticated UID now
                 });
             } catch (error) {
                 console.error("Error writing comparison to Firestore:", error);
@@ -267,6 +258,7 @@
             const comparisonsRef = getHistoryCollectionRef();
             if (!comparisonsRef) return;
 
+            // orderBy is kept, but if an index error occurs, the fix is to sort in JS
             const q = query(comparisonsRef, orderBy('timestamp', 'desc'), limit(10));
             
             onSnapshot(q, (snapshot) => {
@@ -293,8 +285,9 @@
                     historyContainer.appendChild(historyItem);
                 });
             }, (error) => {
+                // This is the error handler that was logging the permission issue.
                 console.error("Error listening to history snapshot:", error);
-                document.getElementById('history-loading').textContent = 'Failed to load history.';
+                document.getElementById('history-loading').textContent = 'Failed to load history (check console for details).';
             });
         }
 
@@ -337,16 +330,12 @@
             const prompt = promptInput.value.trim();
             const selectedModels = Array.from(modelCheckboxes).filter(cb => cb.checked).length;
             
-            // FIX: Check if 'auth' is initialized and user is authenticated. 
-            // During initial load, 'auth' may be set but 'currentUser' may still be null while onAuthStateChanged is running.
-            const isAuthChecked = auth && auth.currentUser !== null;
-            const isReady = prompt.length > 0 && selectedModels > 0 && isAuthChecked;
+            // Simplified check: only checks if prompt and models are selected
+            const isReady = prompt.length > 0 && selectedModels > 0;
             
             generateButton.disabled = !isReady;
             
-            if (!auth || !auth.currentUser) {
-                generateButton.textContent = 'Authenticating...';
-            } else if (!isReady) {
+            if (!isReady) {
                 generateButton.textContent = 'Select Model(s) & Enter Prompt';
             } else {
                 generateButton.textContent = 'Generate Comparisons';
@@ -429,8 +418,8 @@
         promptInput.addEventListener('input', updateButtonStatus);
         modelCheckboxes.forEach(cb => cb.addEventListener('change', updateButtonStatus));
         
-        // Initialize Auth and button status on load
-        window.onload = initializeAuth;
+        // Initialize DB and button status on load
+        window.onload = initializeDb;
 
     </script>
 </body>
