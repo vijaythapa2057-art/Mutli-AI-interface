@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vijaya AI Hub - Unified Comparison</title>
-    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    
     <style>
-        /* Base Styles for the "Fiesta" look - Deeper Background */
+        /* Base Styles */
         body {
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -16,8 +19,8 @@
 
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background-color: #0d9488; border-radius: 4px; } /* Teal 600 for a richer look */
-        ::-webkit-scrollbar-track { background: #0f172a; } /* slate-900 */
+        ::-webkit-scrollbar-thumb { background-color: #0d9488; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
         
         /* Animation for response cards */
         @keyframes fadeIn {
@@ -29,133 +32,198 @@
         .response-card {
             animation: fadeIn 0.6s ease-out;
             transition: all 0.3s ease-in-out;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45); /* Stronger shadow */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
         }
         .response-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 18px 30px rgba(0, 0, 0, 0.7), 0 0 18px rgba(20, 184, 166, 0.6); /* Stronger Teal glow */
-            background-color: #1e293b; /* slate-800 on hover */
+            box-shadow: 0 18px 30px rgba(0, 0, 0, 0.7), 0 0 18px rgba(20, 184, 166, 0.6);
+            background-color: #1e293b;
         }
 
-        /* Model color definitions - Used for border and subtle glow effects */
-        .gemini { border-left-color: #10b981; } /* Emerald */
-        .openai { border-left-color: #3b82f6; } /* Blue */
-        .claude { border-left-color: #ef4444; } /* Red */
-        .copilot { border-left-color: #f97316; } /* Orange */
-        .perplexity { border-left-color: #8b5cf6; } /* Violet */
-        .deepseek { border-left-color: #a855f7; } /* Purple */
+        /* Model color definitions */
+        .gemini { border-left-color: #10b981; } 
+        .openai { border-left-color: #3b82f6; } 
+        .claude { border-left-color: #ef4444; } 
+        .copilot { border-left-color: #f97316; }
+        .perplexity { border-left-color: #8b5cf6; } 
+        .deepseek { border-left-color: #a855f7; }
 
         /* Custom glow on focus for the prompt box */
         #prompt-input:focus {
-            box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.6); /* Teal 500 shadow */
+            box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.6);
             border-color: #2dd4bf;
         }
         
         /* Ensure history sidebar is visible and scrolls independently */
         #history-sidebar {
-            height: calc(100vh - 150px); /* Adjust height relative to viewport */
+            height: calc(100vh - 150px);
+        }
+        
+        /* Loading spinner */
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spin 1s ease-in-out infinite;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
     </style>
 </head>
 <body class="bg-slate-900 text-gray-100 min-h-screen flex flex-col">
 
-    <!-- Header with Dynamic Gradient and User Status --><header class="bg-slate-800 p-4 border-b border-teal-600 shadow-2xl"
-            style="background: linear-gradient(90deg, #1e293b, #1e293b, #0c0e17);">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-            <h1 class="text-4xl font-extrabold tracking-tight text-white flex items-center mb-2 sm:mb-0">
-                <!-- Vijaya AI Hub Logo --><svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-teal-400 mr-3 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+    <!-- Loading Screen (Initial State) -->
+    <div id="initial-loading" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-teal-400"></div>
+        <p class="mt-4 text-xl font-bold text-teal-400">Initializing Vijaya AI Hub...</p>
+    </div>
+
+    <!-- Login Screen (Visible if not authenticated) -->
+    <div id="login-screen" class="hidden fixed inset-0 bg-slate-900 flex items-center justify-center z-40">
+        <div class="bg-slate-800 p-8 md:p-12 rounded-2xl shadow-2xl border border-teal-600 max-w-lg w-full mx-4 text-center">
+            
+            <!-- Logo and Title -->
+            <div class="flex flex-col items-center mb-8">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-teal-400 mb-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                     <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="2" />
                     <path d="M18.36 5.64c-1.61-1.61-3.69-2.58-5.86-2.61V2h-1v1.03c-2.17.03-4.25 1-5.86 2.61L5.64 5.64l.707.707a8 8 0 0110.89-10.89l.707-.707zm-12.72 0c-1.61 1.61-2.58 3.69-2.61 5.86H2v1h1.03c.03 2.17 1 4.25 2.61 5.86l.707-.707a8 8 0 01-10.89-10.89l-.707-.707zm12.72 12.72c1.61-1.61 2.58-3.69 2.61-5.86H22v-1h-1.03c-.03-2.17-1-4.25-2.61-5.86l-.707.707a8 8 0 0110.89 10.89l.707.707zM5.64 18.36L5.64 18.36zM18.36 18.36L18.36 18.36z" fill="#2dd4bf"/>
                 </svg>
-                Vijaya AI Hub
-            </h1>
-            <div id="auth-status" class="text-xs font-semibold text-teal-300 bg-slate-700 py-1 px-3 rounded-full flex items-center shadow-inner">
-                <!-- Status will be updated by JavaScript --><div class="h-2.5 w-2.5 rounded-full bg-yellow-500 mr-2 animate-ping" id="auth-indicator"></div>
-                <span id="auth-text">Initializing Login...</span>
+                <h2 class="text-4xl font-extrabold text-white">Welcome to Vijaya AI Hub</h2>
+                <p class="text-slate-400 mt-2">Sign in to access your comparison history and tools.</p>
             </div>
+
+            <!-- Google Sign-In Button -->
+            <button id="google-login-btn" onclick="handleGoogleLogin()" 
+                    class="w-full flex items-center justify-center px-6 py-3 border border-slate-600 rounded-xl shadow-lg bg-slate-700 text-white font-semibold text-lg hover:bg-slate-600 transition duration-300 focus:outline-none focus:ring-4 focus:ring-teal-500 focus:ring-opacity-50">
+                <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="#EA4335"><path d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l3.58-3.59c-4.17-3.6-9.66-5.81-15.79-5.81C11.5 3.5 1.5 12.23 1.5 24s10 20.5 22.5 20.5c10.5 0 17.5-7.5 17.5-17.5 0-1.15-.12-2.28-.3-3.4H24v6.8h11.39c-.77 4.1-4.66 6.88-11.39 6.88C17.65 37.78 11.5 31.63 11.5 24s6.15-13.78 12.5-13.78z"/></g>
+                    <g fill="#4285F4"><path d="M3.5 24c0-2.3.46-4.52 1.28-6.6l6.83 5.38c.64 1.8 1.83 3.32 3.34 4.38h-11.4c-.82-2.08-1.28-4.29-1.28-6.6z"/></g>
+                    <g fill="#FBBC05"><path d="M24 39.5c-4.4 0-8.32-1.74-11.37-4.58l-6.83 5.38c3.55 3.09 7.96 4.7 13.2 4.7 11.23 0 19.46-7.85 19.46-19.46 0-1.15-.12-2.28-.3-3.4H24v6.8h11.39c-.77 4.1-4.66 6.88-11.39 6.88z"/></g>
+                    <g fill="#34A853"><path d="M40.57 14.53c.66-1.57 1.05-3.23 1.05-5.03 0-2.73-1.0-5.32-2.77-7.22L35.2 6.63c1.78 1.63 2.77 3.99 2.77 6.43 0 1.77-.4 3.43-1.14 5.03L40.57 14.53z"/></g>
+                </svg>
+                Sign In with Google
+            </button>
+            <p class="text-xs text-slate-500 mt-4">Your session will be remembered across visits.</p>
+            <p id="auth-error-message" class="text-sm text-red-400 mt-4 hidden">Authentication failed. Please try again.</p>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Content Area: Now a flex container for History Sidebar and Content --><main class="flex-grow flex p-4 md:p-8 overflow-hidden">
+    <!-- Main Application Content (Hidden until authenticated) -->
+    <div id="app-content" class="hidden flex flex-col flex-grow">
         
-        <!-- HISTORY SIDEBAR (New) --><aside id="history-sidebar" class="w-full md:w-64 flex-shrink-0 bg-slate-800 p-4 mr-6 rounded-2xl shadow-2xl overflow-y-auto border border-slate-700 max-h-full hidden md:block">
-            <h2 class="text-xl font-bold mb-4 text-teal-400 border-b pb-2 border-slate-700">Past Comparisons</h2>
-            <div id="history-list">
-                <p class="text-sm text-slate-400">History loading...</p>
+        <header class="bg-slate-800 p-4 border-b border-teal-600 shadow-2xl"
+                style="background: linear-gradient(90deg, #1e293b, #1e293b, #0c0e17);">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <h1 class="text-4xl font-extrabold tracking-tight text-white flex items-center mb-2 sm:mb-0">
+                    <!-- Vijaya AI Hub Logo SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-teal-400 mr-3 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="2" />
+                        <path d="M18.36 5.64c-1.61-1.61-3.69-2.58-5.86-2.61V2h-1v1.03c-2.17.03-4.25 1-5.86 2.61L5.64 5.64l.707.707a8 8 0 0110.89-10.89l.707-.707zm-12.72 0c-1.61 1.61-2.58 3.69-2.61 5.86H2v1h1.03c.03 2.17 1 4.25 2.61 5.86l.707-.707a8 8 0 01-10.89-10.89l-.707-.707zm12.72 12.72c1.61-1.61 2.58-3.69 2.61-5.86H22v-1h-1.03c-.03-2.17-1-4.25-2.61-5.86l-.707.707a8 8 0 0110.89 10.89l.707.707zM5.64 18.36L5.64 18.36zM18.36 18.36L18.36 18.36z" fill="#2dd4bf"/>
+                    </svg>
+                    Vijaya AI Hub
+                </h1>
+                <div id="auth-status" class="text-xs font-semibold text-teal-300 bg-slate-700 py-1 px-3 rounded-full flex items-center shadow-inner">
+                    <div class="h-2.5 w-2.5 rounded-full bg-yellow-500 mr-2" id="auth-indicator"></div>
+                    <span id="auth-text">Awaiting User Login...</span>
+                    <!-- Sign Out Button -->
+                    <button onclick="auth.signOut()" class="ml-4 text-xs font-medium text-red-400 hover:text-red-300 transition">Sign Out</button>
+                </div>
             </div>
-        </aside>
+        </header>
 
-        <!-- MAIN CONTENT (Prompt + Responses) --><div class="flex-grow flex flex-col overflow-y-auto">
-
-            <!-- AI Selector and Prompt Input --><section class="bg-slate-800 p-6 rounded-2xl shadow-2xl mb-8 border border-slate-700 flex-shrink-0">
-                <h2 class="text-3xl font-bold mb-5 text-teal-400">Select Your Models & Ignite the Query</h2>
-                
-                <!-- Model Selection Checkboxes --><div id="model-selection" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-                    <!-- Applied subtle background on selection --><label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-teal-400">
-                        <input type="checkbox" name="model" value="gemini" data-color="emerald" class="h-4 w-4 text-emerald-500 focus:ring-emerald-500 rounded border-slate-600 bg-slate-900" checked>
-                        <span class="ml-3">Gemini</span>
-                    </label>
-                    <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-blue-500">
-                        <input type="checkbox" name="model" value="openai" data-color="blue" class="h-4 w-4 text-blue-500 focus:ring-blue-500 rounded border-slate-600 bg-slate-900" checked>
-                        <span class="ml-3">OpenAI</span>
-                    </label>
-                    <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-red-500">
-                        <input type="checkbox" name="model" value="claude" data-color="red" class="h-4 w-4 text-red-500 focus:ring-red-500 rounded border-slate-600 bg-slate-900" checked>
-                        <span class="ml-3">Claude</span>
-                    </label>
-                    <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-orange-500">
-                        <input type="checkbox" name="model" value="copilot" data-color="orange" class="h-4 w-4 text-orange-500 focus:ring-orange-500 rounded border-slate-600 bg-slate-900" checked>
-                        <span class="ml-3">Copilot</span>
-                    </label>
-                    <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-violet-500">
-                        <input type="checkbox" name="model" value="perplexity" data-color="violet" class="h-4 w-4 text-violet-500 focus:ring-violet-500 rounded border-slate-600 bg-slate-900" checked>
-                        <span class="ml-3">Perplexity</span>
-                    </label>
-                    <!-- DeepSeek --><label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-purple-500">
-                        <input type="checkbox" name="model" value="deepseek" data-color="purple" class="h-4 w-4 text-purple-500 focus:ring-purple-500 rounded border-slate-600 bg-slate-900" checked>
-                        <span class="ml-3">DeepSeek</span>
-                    </label>
-                </div>
-                
-                <!-- Prompt Input and Button --><div class="flex flex-col md:flex-row gap-4">
-                    <textarea id="prompt-input" rows="3" placeholder="Enter your prompt and see the AI show begin..." 
-                            class="flex-grow p-4 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:ring-0 text-gray-100 placeholder-slate-500 resize-none transition duration-300">Explain the difference between quantum computing and classical computing in simple terms.</textarea>
-                    
-                    <button id="generate-btn" onclick="generateResponses()" 
-                            class="px-8 py-3 bg-teal-600 text-white font-extrabold rounded-xl shadow-2xl shadow-teal-600/50 hover:bg-teal-500 transition duration-300 focus:outline-none focus:ring-4 focus:ring-teal-500 focus:ring-opacity-50 flex items-center justify-center whitespace-nowrap disabled:opacity-40 disabled:shadow-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-                        </svg>
-                        Start Comparison
-                    </button>
-                </div>
-                <div id="error-message" class="text-red-400 mt-3 hidden text-sm font-medium">Please select at least one AI model and enter a prompt before querying the hub.</div>
-            </section>
+        <main class="flex-grow flex p-4 md:p-8 overflow-hidden">
             
-            <!-- Response Display Area - The grid ensures side-by-side view on larger screens --><section id="response-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 auto-rows-max"></section>
-        </div>
+            <!-- History Sidebar -->
+            <aside id="history-sidebar" class="w-full md:w-64 flex-shrink-0 bg-slate-800 p-4 mr-6 rounded-2xl shadow-2xl overflow-y-auto border border-slate-700 max-h-full hidden md:block">
+                <h2 class="text-xl font-bold mb-4 text-teal-400 border-b pb-2 border-slate-700">Past Comparisons</h2>
+                <div id="history-list">
+                    <p class="text-sm text-slate-400">Sign in to load history.</p>
+                </div>
+            </aside>
 
-        <!-- Loading Indicator --><div id="loading-indicator" class="hidden fixed inset-0 bg-slate-900 bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
-            <div class="flex flex-col items-center">
-                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-teal-400"></div>
-                <p class="mt-4 text-xl font-bold text-teal-400">The Vijaya is Rising...</p>
+            <!-- Main Content Area -->
+            <div class="flex-grow flex flex-col overflow-y-auto">
+
+                <!-- Input/Model Selection Section -->
+                <section class="bg-slate-800 p-6 rounded-2xl shadow-2xl mb-8 border border-slate-700 flex-shrink-0">
+                    <h2 class="text-3xl font-bold mb-5 text-teal-400">Select Your Models & Ignite the Query</h2>
+                    
+                    <!-- Model Checkboxes -->
+                    <div id="model-selection" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                        <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-teal-400">
+                            <input type="checkbox" name="model" value="gemini" data-color="emerald" class="h-4 w-4 text-emerald-500 focus:ring-emerald-500 rounded border-slate-600 bg-slate-900" checked>
+                            <span class="ml-3">Gemini</span>
+                        </label>
+                        <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-blue-500">
+                            <input type="checkbox" name="model" value="openai" data-color="blue" class="h-4 w-4 text-blue-500 focus:ring-blue-500 rounded border-slate-600 bg-slate-900" checked>
+                            <span class="ml-3">OpenAI</span>
+                        </label>
+                        <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-red-500">
+                            <input type="checkbox" name="model" value="claude" data-color="red" class="h-4 w-4 text-red-500 focus:ring-red-500 rounded border-slate-600 bg-slate-900" checked>
+                            <span class="ml-3">Claude</span>
+                        </label>
+                        <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-orange-500">
+                            <input type="checkbox" name="model" value="copilot" data-color="orange" class="h-4 w-4 text-orange-500 focus:ring-orange-500 rounded border-slate-600 bg-slate-900" checked>
+                            <span class="ml-3">Copilot</span>
+                        </label>
+                        <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-violet-500">
+                            <input type="checkbox" name="model" value="perplexity" data-color="violet" class="h-4 w-4 text-violet-500 focus:ring-violet-500 rounded border-slate-600 bg-slate-900" checked>
+                            <span class="ml-3">Perplexity</span>
+                        </label>
+                        <label class="flex items-center p-3 rounded-lg border border-slate-700 hover:bg-slate-700 transition duration-150 cursor-pointer text-sm font-medium has-[:checked]:bg-slate-700 has-[:checked]:border-purple-500">
+                            <input type="checkbox" name="model" value="deepseek" data-color="purple" class="h-4 w-4 text-purple-500 focus:ring-purple-500 rounded border-slate-600 bg-slate-900" checked>
+                            <span class="ml-3">DeepSeek</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Prompt Input and Button -->
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <textarea id="prompt-input" rows="3" placeholder="Enter your prompt and see the AI show begin..." 
+                                class="flex-grow p-4 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:ring-0 text-gray-100 placeholder-slate-500 resize-none transition duration-300">Explain the difference between quantum computing and classical computing in simple terms.</textarea>
+                        
+                        <button id="generate-btn" onclick="generateResponses()" 
+                                class="px-8 py-3 bg-teal-600 text-white font-extrabold rounded-xl shadow-2xl shadow-teal-600/50 hover:bg-teal-500 transition duration-300 focus:outline-none focus:ring-4 focus:ring-teal-500 focus:ring-opacity-50 flex items-center justify-center whitespace-nowrap disabled:opacity-40 disabled:shadow-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                            </svg>
+                            Start Comparison
+                        </button>
+                    </div>
+                    <div id="error-message" class="text-red-400 mt-3 hidden text-sm font-medium">Please select at least one AI model and enter a prompt before querying the hub.</div>
+                </section>
+                
+                <!-- Response Grid -->
+                <section id="response-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 auto-rows-max"></section>
             </div>
-        </div>
-        
-    </main>
+
+            <!-- Global Loading Indicator -->
+            <div id="global-loading-indicator" class="hidden fixed inset-0 bg-slate-900 bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+                <div class="flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-teal-400"></div>
+                    <p class="mt-4 text-xl font-bold text-teal-400">The Vijaya is Rising...</p>
+                </div>
+            </div>
+            
+        </main>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Mandatory Firebase Globals (Provided by Canvas Environment)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -167,63 +235,99 @@
         let userId = null;
         let isAuthReady = false;
 
-        // Firestore Constants (Path is user-specific for private data)
+        // Firestore Constants
         const HISTORY_COLLECTION_PATH = () => `/artifacts/${appId}/users/${userId}/comparison_history`;
 
         // DOM Elements
+        const appContent = document.getElementById('app-content');
+        const loginScreen = document.getElementById('login-screen');
+        const initialLoading = document.getElementById('initial-loading');
+        const authText = document.getElementById('auth-text');
+        const authIndicator = document.getElementById('auth-indicator');
+        const authErrorMessage = document.getElementById('auth-error-message');
+        
         const promptInput = document.getElementById('prompt-input');
         const generateBtn = document.getElementById('generate-btn');
         const modelCheckboxes = document.querySelectorAll('input[name="model"]');
         const responseContainer = document.getElementById('response-container');
         const errorMessage = document.getElementById('error-message');
-        const loadingIndicator = document.getElementById('loading-indicator');
+        const globalLoadingIndicator = document.getElementById('global-loading-indicator');
         const historyList = document.getElementById('history-list');
 
-        // --- Firebase Auth Setup (Simulated Single Login) ---
+        // --- Core Authentication Flow ---
+
         async function initializeAuth() {
+            // Step 1: Set persistence for "Remember Me" functionality
+            // This is done automatically by the default setting, but we explicitly set it for clarity
             try {
-                const authIndicator = document.getElementById('auth-indicator');
-                const authText = document.getElementById('auth-text');
-                
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    // Fallback to anonymous sign-in if no custom token is available
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        authText.textContent = `Signed in: ${userId}`;
-                        authIndicator.classList.remove('bg-yellow-500', 'animate-ping');
-                        authIndicator.classList.add('bg-teal-400');
-                    } else {
-                        // Use a fallback random ID if authentication fails or user signs out
-                        userId = crypto.randomUUID();
-                        authText.textContent = `Anonymous ID: ${userId}`;
-                        authIndicator.classList.remove('bg-yellow-500', 'animate-ping');
-                        authIndicator.classList.add('bg-red-500');
-                    }
-                    isAuthReady = true;
-                    // Now that auth is ready, enable the button check and load history
-                    window.dispatchEvent(new Event('authready')); 
-                });
-
+                await setPersistence(auth, browserLocalPersistence);
             } catch (error) {
-                console.error("Firebase Auth Error:", error);
-                // Assign a fallback UUID if Firebase fails entirely
-                userId = crypto.randomUUID();
-                isAuthReady = true;
-                document.getElementById('auth-text').textContent = `Auth Failed. Using local ID: ${userId}`;
-                document.getElementById('auth-indicator').classList.remove('bg-yellow-500', 'animate-ping');
-                document.getElementById('auth-indicator').classList.add('bg-red-500');
-                window.dispatchEvent(new Event('authready')); 
+                console.error("Error setting persistence:", error);
+                // Continue even if setting persistence fails
             }
+
+            // Step 2: Listen for authentication state changes
+            onAuthStateChanged(auth, (user) => {
+                initialLoading.classList.add('hidden'); // Hide the initial loader once state is checked
+                isAuthReady = true;
+
+                if (user) {
+                    // User is signed in
+                    userId = user.uid;
+                    
+                    authText.textContent = `User: ${user.email || user.uid}`;
+                    authIndicator.classList.remove('bg-yellow-500');
+                    authIndicator.classList.add('bg-teal-400');
+                    
+                    loginScreen.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    
+                    loadHistoryListener(); // Start listening for history
+                } else {
+                    // User is signed out
+                    userId = null;
+                    authText.textContent = `Signed Out`;
+                    authIndicator.classList.remove('bg-teal-400');
+                    authIndicator.classList.add('bg-red-500');
+                    
+                    loginScreen.classList.remove('hidden');
+                    appContent.classList.add('hidden');
+                    
+                    historyList.innerHTML = `<p class="text-sm text-slate-400">Sign in to load history.</p>`;
+                }
+                updateButtonStatus();
+            });
         }
         
+        // --- Google Login Function (Globally Accessible) ---
+        window.handleGoogleLogin = async () => {
+            authErrorMessage.classList.add('hidden');
+            // NOTE ON SCOPES: The default GoogleAuthProvider implicitly requests the minimal scopes
+            // ('email', 'profile', 'openid'), which ONLY grants access to the name, email, and 
+            // profile picture. It DOES NOT access the inbox or other sensitive user data.
+            const provider = new GoogleAuthProvider();
+            
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("Login successful:", result.user);
+                // onAuthStateChanged will handle the UI update
+            } catch (error) {
+                console.error("Google Sign-In Error:", error);
+                
+                let message = "Authentication failed. Please check your network.";
+                if (error.code === 'auth/popup-closed-by-user') {
+                    message = "Login canceled. Please click 'Sign In with Google' to try again.";
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    message = "Authentication pop-up request blocked. Please allow pop-ups for this site.";
+                }
+                authErrorMessage.textContent = message;
+                authErrorMessage.classList.remove('hidden');
+            }
+        };
+
         // --- Simulated Model Data ---
         const models = {
+            // ... (Model data remains the same) ...
             gemini: { name: "Gemini", colorClass: "gemini", response: "As Gemini, I focus on synthesizing information for speed and utility. My response is: **Classical** computers use bits (0 or 1). **Quantum** computers use qubits, which can be 0, 1, or both simultaneously (superposition). This allows them to process vast amounts of data exponentially faster for specific types of problems. This is achieved through superposition and entanglement. I offer the best balance of context and conciseness for comparison." },
             openai: { name: "OpenAI (GPT-4)", colorClass: "openai", response: "OpenAI models are renowned for deep reasoning and complex creativity. My detailed response provides a thorough, high-level analysis of the requested topic: **Classical Computing** is like a light switch—it's either ON (1) or OFF (0). It solves problems sequentially. **Quantum Computing** is like having a dimmer switch that can be partially ON and OFF at the same time, allowing it to explore millions of possibilities simultaneously. While not a replacement for classical computers, quantum systems are poised to revolutionize fields like drug discovery and materials science due to their unique properties." },
             claude: { name: "Claude 3", colorClass: "claude", response: "I prioritize ethical context, long-form coherence, and nuanced dialogue. My output is formatted for easy readability and human-like thoughtfulness: The fundamental difference lies in how information is stored and processed. **Classical computers** rely on the simple logic of binary states (bits). **Quantum computers**, conversely, exploit the laws of quantum mechanics, utilizing features like entanglement and superposition to perform calculations. This allows quantum systems to handle complexity that would take classical supercomputers millennia to solve, though they are currently complex and specialized tools." },
@@ -232,13 +336,12 @@
             deepseek: { name: "DeepSeek", colorClass: "deepseek", response: "DeepSeek models are known for their efficiency and strong coding capabilities. My focus here is on structural clarity: The basic unit of **classical computing** is a bit, which must be either 0 or 1. The basic unit of **quantum computing** is a qubit, which can exist in a superposition of both states simultaneously. Think of classical as a single road trip (one path at a time), and quantum as taking all possible road trips simultaneously. This parallel processing is what makes quantum computing potentially transformative for optimization problems, machine learning, and cryptography." },
         };
 
-
         // --- Helper Functions ---
         function updateButtonStatus() {
             const isModelSelected = Array.from(modelCheckboxes).some(cb => cb.checked);
             const isPromptEntered = promptInput.value.trim().length > 0;
-            // Only enable button if auth is ready, models are selected, and prompt is entered
-            generateBtn.disabled = !(isAuthReady && isModelSelected && isPromptEntered); 
+            // Only enable button if auth is ready, user is logged in, models are selected, and prompt is entered
+            generateBtn.disabled = !(isAuthReady && userId && isModelSelected && isPromptEntered); 
         }
 
         function copyText(button) {
@@ -266,22 +369,21 @@
                 document.body.removeChild(tempTextArea);
             }
         }
-        window.copyText = copyText; // Make accessible globally
+        window.copyText = copyText;
 
         // --- Firestore History Functions ---
 
         function loadHistoryListener() {
             if (!userId) {
-                console.warn("User ID not available, deferring history listener setup.");
+                // If the user logs out, this will prevent loading logic from running
+                historyList.innerHTML = `<p class="text-sm text-slate-400">Sign in to load history.</p>`;
                 return; 
             }
             
-            // Create a query to the comparison history, sorted by timestamp descending
             const q = query(collection(db, HISTORY_COLLECTION_PATH()), orderBy('timestamp', 'desc'));
 
             console.log("Setting up real-time history listener...");
 
-            // Set up real-time listener
             onSnapshot(q, (snapshot) => {
                 const historyItems = [];
                 snapshot.forEach((doc) => {
@@ -295,7 +397,7 @@
         }
 
         function renderHistory(items) {
-            historyList.innerHTML = ''; // Clear previous items
+            historyList.innerHTML = ''; 
 
             if (items.length === 0) {
                 historyList.innerHTML = `<p class="text-sm text-slate-500 italic">No history yet. Run a comparison!</p>`;
@@ -315,7 +417,6 @@
                     <p class="text-xs text-slate-400 mt-1">${dateString} at ${timeString}</p>
                     <span class="text-xs text-teal-300">${modelCount} Model${modelCount !== 1 ? 's' : ''}</span>
                 `;
-                // Attach click handler to load this specific comparison
                 historyItemElement.onclick = () => displayComparisonFromHistory(item);
                 historyList.appendChild(historyItemElement);
             });
@@ -323,34 +424,30 @@
 
         function displayComparisonFromHistory(historyItem) {
             responseContainer.innerHTML = '';
-            promptInput.value = historyItem.prompt; // Set prompt input to the saved prompt
+            promptInput.value = historyItem.prompt; 
 
-            // Deselect all checkboxes first
             modelCheckboxes.forEach(cb => cb.checked = false);
 
-            // Re-render the saved results and select relevant checkboxes
             historyItem.results.forEach((result, index) => {
                 setTimeout(() => {
                     const tempDiv = document.createElement('div');
-                    // Pass the result object and the original item's timestamp
                     tempDiv.innerHTML = createResponseCard(result, historyItem.prompt, historyItem.timestamp).trim();
                     if (tempDiv.firstChild) {
                          responseContainer.appendChild(tempDiv.firstChild);
                     }
-                    // Check the corresponding model checkbox
                     const modelCheckbox = document.querySelector(`input[name="model"][value="${result.modelKey}"]`);
                     if (modelCheckbox) {
                         modelCheckbox.checked = true;
                     }
                 }, index * 150); 
             });
-            updateButtonStatus(); // Update button status after setting prompt and checkboxes
+            updateButtonStatus();
         }
 
         async function saveComparison(prompt, results) {
             try {
                 if (!userId) {
-                    console.error("Cannot save comparison: User ID is missing.");
+                    console.error("Cannot save comparison: User ID is missing (not logged in).");
                     return;
                 }
 
@@ -368,7 +465,6 @@
         // --- Core Rendering Logic ---
 
         function createResponseCard(responseObject, prompt, timestamp) {
-            // Use the data structure from the saved object (responseObject) or fall back to hardcoded models data
             const modelData = models[responseObject.modelKey]; 
             const timeToDisplay = new Date(timestamp.toDate ? timestamp.toDate() : timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
             
@@ -383,13 +479,13 @@
                         <span class="text-xs font-semibold text-gray-400 bg-slate-700 px-2 py-1 rounded-full">${timeToDisplay}</span>
                     </div>
                     
-                    <!-- Content Area --><div class="text-sm text-gray-300 prose prose-invert max-w-none">
+                    <div class="text-sm text-gray-300 prose prose-invert max-w-none">
                         <p class="mb-3 italic text-slate-400">Query: ${prompt.substring(0, 70).trim()}${prompt.length > 70 ? '...' : ''}</p>
                         
                         <p>${uniqueResponse}</p>
                     </div>
 
-                    <!-- Actions --><div class="mt-4 pt-4 border-t border-slate-700 flex justify-end">
+                    <div class="mt-4 pt-4 border-t border-slate-700 flex justify-end">
                         <button class="text-xs font-semibold text-teal-300 hover:text-teal-500 transition" onclick="copyText(this)">Copy Output</button>
                     </div>
                 </div>
@@ -398,10 +494,15 @@
         }
 
         function generateResponses() {
+            if (!userId) {
+                // Should be disabled, but a fallback check
+                alert("Please sign in to run a comparison."); 
+                return;
+            }
+            
             const prompt = promptInput.value.trim();
             const selectedModels = Array.from(modelCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
 
-            // Validation
             if (prompt.length === 0 || selectedModels.length === 0) {
                 errorMessage.classList.remove('hidden');
                 return;
@@ -409,18 +510,16 @@
                 errorMessage.classList.add('hidden');
             }
 
-            // Clear previous results and show loading
             responseContainer.innerHTML = '';
-            loadingIndicator.classList.remove('hidden');
+            globalLoadingIndicator.classList.remove('hidden');
 
             const generatedResponses = [];
-            const comparisonTimestamp = Date.now(); // Consistent time for the whole comparison set
+            const comparisonTimestamp = Timestamp.now(); 
 
             // Simulate an API call delay
             setTimeout(() => {
-                loadingIndicator.classList.add('hidden');
+                globalLoadingIndicator.classList.add('hidden');
                 
-                // Sort models alphabetically for predictable rendering
                 selectedModels.sort();
                 
                 selectedModels.forEach(modelKey => {
@@ -429,14 +528,12 @@
                         modelKey: modelKey,
                         name: modelData.name,
                         colorClass: modelData.colorClass,
-                        response: modelData.response, // This is the core result
+                        response: modelData.response,
                     };
                     generatedResponses.push(responseItem);
 
-                    // Create cards with a slight, staggered delay for a smoother visual effect
                     setTimeout(() => {
                         const tempDiv = document.createElement('div');
-                        // Pass the responseItem and comparisonTimestamp
                         tempDiv.innerHTML = createResponseCard(responseItem, prompt, comparisonTimestamp).trim();
                         if (tempDiv.firstChild) {
                              responseContainer.appendChild(tempDiv.firstChild);
@@ -444,7 +541,7 @@
                     }, selectedModels.indexOf(modelKey) * 150); 
                 });
 
-                // Save the entire comparison (prompt and results) to Firestore
+                // Save the comparison to Firestore
                 saveComparison(prompt, generatedResponses);
                 
             }, 1000); // Main delay before starting to render
@@ -453,15 +550,6 @@
         // Event listeners for real-time status update
         promptInput.addEventListener('input', updateButtonStatus);
         modelCheckboxes.forEach(cb => cb.addEventListener('change', updateButtonStatus));
-        
-        // Listen for the custom event to update status once Firebase is ready
-        window.addEventListener('authready', () => {
-            updateButtonStatus();
-            // Load history only after authentication is confirmed and userId is set
-            if (isAuthReady && userId) {
-                loadHistoryListener();
-            }
-        });
         
         // Initialize Auth and button status on load
         window.onload = initializeAuth;
