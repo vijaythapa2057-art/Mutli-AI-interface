@@ -269,23 +269,26 @@
         // --- Core Authentication Flow ---
 
         async function initializeAuth() {
-            try {
-                await setPersistence(auth, browserLocalPersistence);
-            } catch (error) {
+            // 1. Start persistence setting in the background without blocking the thread.
+            setPersistence(auth, browserLocalPersistence).catch(error => {
                 console.error("Error setting persistence:", error);
-            }
+            });
+            
+            // 2. IMPORTANT: Hide the initial loading screen immediately. 
+            // This prevents the user from waiting for a potentially slow browser storage operation.
+            initialLoading.classList.add('hidden'); 
 
             onAuthStateChanged(auth, (user) => {
-                initialLoading.classList.add('hidden'); 
                 isAuthReady = true;
 
                 if (user) {
                     userId = user.uid;
                     
                     authText.textContent = `User: ${user.email || user.uid.substring(0, 8) + '...'}`;
-                    authIndicator.classList.remove('bg-yellow-500');
+                    authIndicator.classList.remove('bg-yellow-500', 'bg-red-500');
                     authIndicator.classList.add('bg-teal-400');
                     
+                    // Show App Content
                     loginScreen.classList.add('hidden');
                     appContent.classList.remove('hidden');
                     
@@ -293,9 +296,10 @@
                 } else {
                     userId = null;
                     authText.textContent = `Signed Out`;
-                    authIndicator.classList.remove('bg-teal-400');
+                    authIndicator.classList.remove('bg-yellow-500', 'bg-teal-400');
                     authIndicator.classList.add('bg-red-500');
                     
+                    // Show Login Screen
                     loginScreen.classList.remove('hidden');
                     appContent.classList.add('hidden');
                     
