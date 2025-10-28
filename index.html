@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon AI Hub - Unified Interface</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom scrollbar for a sleek look */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #111827; } /* bg-gray-900 */
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Animation for response cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .response-card {
+            animation: fadeIn 0.5s ease-out;
+            transition: box-shadow 0.3s ease;
+        }
+        .response-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Model color definitions - Used for border and subtle glow effects */
+        .gemini { border-left-color: #10b981; } 
+        .openai { border-left-color: #3b82f6; }
+        .claude { border-left-color: #ef4444; } 
+        .copilot { border-left-color: #f97316; } 
+        .perplexity { border-left-color: #8b5cf6; } 
+
+        /* Custom glow on focus for the prompt box */
+        #prompt-input:focus {
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.5); /* Emerald 500 shadow */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Header with Gradient -->
+    <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-xl"
+            style="background: linear-gradient(90deg, #1f2937, #1f2937, #111827);">
+        <h1 class="text-3xl font-extrabold tracking-wider text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-400 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L2 21h20L12 2zm0 4.02L18.6 18H5.4L12 6.02z"/>
+            </svg>
+            Horizon AI Hub
+            <span class="text-base font-normal text-gray-400 ml-4 hidden sm:inline-block">The Unified Intelligence Console</span>
+        </h1>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col p-4 md:p-8 overflow-y-auto">
+
+        <!-- AI Selector and Prompt Input -->
+        <section class="bg-gray-800 p-6 rounded-2xl shadow-2xl mb-8 border border-gray-700">
+            <h2 class="text-2xl font-bold mb-5 text-emerald-400">Select Models & Query</h2>
+            
+            <!-- Model Selection Checkboxes -->
+            <div id="model-selection" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                <!-- Applied subtle background on selection -->
+                <label class="flex items-center p-3 rounded-lg border border-gray-700 hover:bg-gray-700 transition duration-150 cursor-pointer text-sm has-[:checked]:bg-gray-700 has-[:checked]:border-emerald-500">
+                    <input type="checkbox" name="model" value="gemini" data-color="emerald" class="h-4 w-4 text-emerald-500 focus:ring-emerald-500 rounded border-gray-600 bg-gray-900" checked>
+                    <span class="ml-3 font-medium">Gemini</span>
+                </label>
+                <label class="flex items-center p-3 rounded-lg border border-gray-700 hover:bg-gray-700 transition duration-150 cursor-pointer text-sm has-[:checked]:bg-gray-700 has-[:checked]:border-blue-500">
+                    <input type="checkbox" name="model" value="openai" data-color="blue" class="h-4 w-4 text-blue-500 focus:ring-blue-500 rounded border-gray-600 bg-gray-900" checked>
+                    <span class="ml-3 font-medium">OpenAI</span>
+                </label>
+                <label class="flex items-center p-3 rounded-lg border border-gray-700 hover:bg-gray-700 transition duration-150 cursor-pointer text-sm has-[:checked]:bg-gray-700 has-[:checked]:border-red-500">
+                    <input type="checkbox" name="model" value="claude" data-color="red" class="h-4 w-4 text-red-500 focus:ring-red-500 rounded border-gray-600 bg-gray-900" checked>
+                    <span class="ml-3 font-medium">Claude</span>
+                </label>
+                <label class="flex items-center p-3 rounded-lg border border-gray-700 hover:bg-gray-700 transition duration-150 cursor-pointer text-sm has-[:checked]:bg-gray-700 has-[:checked]:border-orange-500">
+                    <input type="checkbox" name="model" value="copilot" data-color="orange" class="h-4 w-4 text-orange-500 focus:ring-orange-500 rounded border-gray-600 bg-gray-900" checked>
+                    <span class="ml-3 font-medium">Copilot</span>
+                </label>
+                <label class="flex items-center p-3 rounded-lg border border-gray-700 hover:bg-gray-700 transition duration-150 cursor-pointer text-sm has-[:checked]:bg-gray-700 has-[:checked]:border-violet-500">
+                    <input type="checkbox" name="model" value="perplexity" data-color="violet" class="h-4 w-4 text-violet-500 focus:ring-violet-500 rounded border-gray-600 bg-gray-900" checked>
+                    <span class="ml-3 font-medium">Perplexity</span>
+                </label>
+            </div>
+            
+            <!-- Prompt Input and Button -->
+            <div class="flex flex-col md:flex-row gap-4">
+                <textarea id="prompt-input" rows="3" placeholder="Ask all AIs to write a short story, summarize a topic, or generate code..." 
+                          class="flex-grow p-4 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-0 text-gray-100 placeholder-gray-500 resize-none transition duration-300">Explain the difference between quantum computing and classical computing in simple terms.</textarea>
+                
+                <button id="generate-btn" onclick="generateResponses()" 
+                        class="px-8 py-3 bg-emerald-600 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-500 focus:ring-opacity-50 flex items-center justify-center whitespace-nowrap disabled:opacity-40 disabled:shadow-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                    </svg>
+                    Compare Responses
+                </button>
+            </div>
+            <div id="error-message" class="text-red-400 mt-3 hidden text-sm font-medium">Please select at least one AI model and enter a prompt before querying the hub.</div>
+        </section>
+        
+        <!-- Response Display Area - The grid ensures side-by-side view on larger screens -->
+        <section id="response-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-max"></section>
+        
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-300">
+            <div class="flex flex-col items-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-400"></div>
+                <p class="mt-4 text-xl font-medium text-emerald-400">Querying all AIs...</p>
+            </div>
+        </div>
+        
+    </main>
+
+    <script>
+        const models = {
+            gemini: { name: "Gemini", colorClass: "gemini", response: "As Gemini, I focus on synthesizing information for speed and utility. My response is: **Classical** computers use bits (0 or 1). **Quantum** computers use qubits, which can be 0, 1, or both simultaneously (superposition). This allows them to process vast amounts of data exponentially faster for specific types of problems. This is achieved through superposition and entanglement. I offer the best balance of context and conciseness for comparison." },
+            openai: { name: "OpenAI (GPT-4)", colorClass: "openai", response: "OpenAI models are renowned for deep reasoning and complex creativity. My detailed response provides a thorough, high-level analysis of the requested topic: **Classical Computing** is like a light switch—it's either ON (1) or OFF (0). It solves problems sequentially. **Quantum Computing** is like having a dimmer switch that can be partially ON and OFF at the same time, allowing it to explore millions of possibilities simultaneously. While not a replacement for classical computers, quantum systems are poised to revolutionize fields like drug discovery and materials science due to their unique properties." },
+            claude: { name: "Claude 3", colorClass: "claude", response: "I prioritize ethical context, long-form coherence, and nuanced dialogue. My output is formatted for easy readability and human-like thoughtfulness: The fundamental difference lies in how information is stored and processed. **Classical computers** rely on the simple logic of binary states (bits). **Quantum computers**, conversely, exploit the laws of quantum mechanics, utilizing features like entanglement and superposition to perform calculations. This allows quantum systems to handle complexity that would take classical supercomputers millennia to solve, though they are currently complex and specialized tools." },
+            copilot: { name: "Copilot (with Grounding)", colorClass: "copilot", response: "Powered by Microsoft and real-time search, I provide a grounded response, ideal for factual queries requiring up-to-the-minute data or external references: The distinction is in the processor's core unit. **Classical** units (bits) perform linear calculations based on established, macroscopic physics. **Quantum** units (qubits) leverage particle behavior at the atomic level, enabling massive parallel computation. This shift is critical for fields like optimization and AI, where simultaneous variable testing is beneficial. Sources indicate major progress is being made in reducing error rates across current quantum prototypes. [SIMULATED SOURCE 1] [SIMULATED SOURCE 2]" },
+            perplexity: { name: "Perplexity", colorClass: "perplexity", response: "I function as an answer engine, directly citing sources to ensure accuracy and verifiability. This response is a synthesis of confirmed facts: **Classical** computers are confined to a single state per bit, processing one answer path at a time. **Quantum** computers leverage the state of superposition, enabling a single qubit to represent multiple states concurrently. This parallel processing capability, while challenging to scale, represents a paradigm shift for computational speed in specific high-complexity tasks, as confirmed by recent physics journals. [SIMULATED PERPLEXITY ANSWER]." }
+        };
+
+        const promptInput = document.getElementById('prompt-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const modelCheckboxes = document.querySelectorAll('input[name="model"]');
+        const responseContainer = document.getElementById('response-container');
+        const errorMessage = document.getElementById('error-message');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        // Function to check button status (now mostly for UX, but still needed if user deselects/clears)
+        function updateButtonStatus() {
+            const isModelSelected = Array.from(modelCheckboxes).some(cb => cb.checked);
+            const isPromptEntered = promptInput.value.trim().length > 0;
+            generateBtn.disabled = !(isModelSelected && isPromptEntered);
+        }
+
+        // Event listeners for real-time status update
+        promptInput.addEventListener('input', updateButtonStatus);
+        modelCheckboxes.forEach(cb => cb.addEventListener('change', updateButtonStatus));
+        
+        function createResponseCard(modelKey, prompt) {
+            const modelData = models[modelKey];
+            const timestamp = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            // The responses are now more detailed and pre-optimized for the 'explain' prompt
+            let uniqueResponse = modelData.response;
+            
+            // Generate the card, which is structurally designed for side-by-side comparison (grid layout in HTML)
+            const cardHTML = `
+                <div class="response-card bg-gray-800 rounded-xl shadow-xl overflow-hidden border-l-4 p-6 transition duration-300 ${modelData.colorClass} hover:shadow-2xl hover:shadow-gray-700/50">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-extrabold text-gray-200">${modelData.name}</h3>
+                        <span class="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded-full">${timestamp}</span>
+                    </div>
+                    
+                    <!-- Content Area -->
+                    <div class="text-sm text-gray-300 prose prose-invert max-w-none">
+                        <p class="mb-3 italic text-gray-400">Query: ${prompt.substring(0, 70).trim()}${prompt.length > 70 ? '...' : ''}</p>
+                        
+                        <p>${uniqueResponse}</p>
+                        
+                        <!-- No code block for this specific prompt, but the logic remains for code prompts -->
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4 pt-4 border-t border-gray-700 flex justify-end">
+                        <button class="text-xs font-medium text-gray-400 hover:text-emerald-400 transition" onclick="copyText(this)">Copy Output</button>
+                    </div>
+                </div>
+            `;
+            return cardHTML;
+        }
+
+        function generateResponses() {
+            const prompt = promptInput.value.trim();
+            const selectedModels = Array.from(modelCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+
+            // Basic validation
+            if (prompt.length === 0 || selectedModels.length === 0) {
+                errorMessage.classList.remove('hidden');
+                return;
+            } else {
+                errorMessage.classList.add('hidden');
+            }
+
+            // Clear previous results and show loading
+            responseContainer.innerHTML = '';
+            loadingIndicator.classList.remove('hidden');
+
+            // Simulate an API call delay
+            setTimeout(() => {
+                loadingIndicator.classList.add('hidden');
+                // Use a document fragment for optimal performance when inserting multiple elements
+                
+                selectedModels.forEach(modelKey => {
+                    // Create cards with a slight, staggered delay for a smoother visual effect
+                    setTimeout(() => {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = createResponseCard(modelKey, prompt).trim();
+                        if (tempDiv.firstChild) {
+                             responseContainer.appendChild(tempDiv.firstChild);
+                        }
+                    }, selectedModels.indexOf(modelKey) * 200); 
+                });
+                
+            }, 1000); // Main delay before starting to render
+        }
+
+        function copyText(button) {
+            // Find the parent response card and its main text content
+            const card = button.closest('.response-card');
+            const proseElement = card.querySelector('.prose');
+            
+            // Get all text content and clean it up (simple innerText works well for this simulation)
+            const textToCopy = proseElement.innerText;
+            
+            // Temporary textarea method for clipboard compatibility
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    button.textContent = 'Copied!';
+                    setTimeout(() => button.textContent = 'Copy Output', 1500);
+                } else {
+                     button.textContent = 'Error Copying!';
+                }
+            } catch (err) {
+                console.error('Copy command failed:', err);
+                 button.textContent = 'Error Copying!';
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        // Initialize button status on load
+        window.onload = updateButtonStatus;
+
+    </script>
+</body>
+</html>
