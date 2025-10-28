@@ -337,10 +337,14 @@
             const prompt = promptInput.value.trim();
             const selectedModels = Array.from(modelCheckboxes).filter(cb => cb.checked).length;
             
-            const isReady = prompt.length > 0 && selectedModels > 0 && auth.currentUser !== null;
+            // FIX: Check if 'auth' is initialized and user is authenticated. 
+            // During initial load, 'auth' may be set but 'currentUser' may still be null while onAuthStateChanged is running.
+            const isAuthChecked = auth && auth.currentUser !== null;
+            const isReady = prompt.length > 0 && selectedModels > 0 && isAuthChecked;
             
             generateButton.disabled = !isReady;
-            if (!auth.currentUser) {
+            
+            if (!auth || !auth.currentUser) {
                 generateButton.textContent = 'Authenticating...';
             } else if (!isReady) {
                 generateButton.textContent = 'Select Model(s) & Enter Prompt';
